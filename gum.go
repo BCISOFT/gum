@@ -15,6 +15,7 @@ import (
 	"github.com/charmbracelet/gum/man"
 	"github.com/charmbracelet/gum/pager"
 	"github.com/charmbracelet/gum/spin"
+	"github.com/charmbracelet/gum/sshfile"
 	"github.com/charmbracelet/gum/style"
 	"github.com/charmbracelet/gum/table"
 	"github.com/charmbracelet/gum/version"
@@ -72,6 +73,11 @@ type Gum struct {
 	//
 	// $ gum file $HOME
 	File file.Options `cmd:"" help:"Pick a file from a folder"`
+
+	// Sshfile provides an interface to pick a file from ssh
+	// The user is provided a file manager-like interface to navigate, to
+	// select a file or a directory.
+	Sshfile sshfile.Options `cmd:"" help:"Pick a file from a folder"`
 
 	// Filter provides a fuzzy searching text input to allow filtering a list of
 	// options to select one option.

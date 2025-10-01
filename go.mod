@@ -18,6 +18,7 @@ require (
 	github.com/charmbracelet/x/exp/ordered v0.1.0
 	github.com/charmbracelet/x/term v0.2.1
 	github.com/charmbracelet/x/xpty v0.1.2
+	github.com/dustin/go-humanize v1.0.1
 	github.com/muesli/roff v0.1.0
 	github.com/muesli/termenv v0.16.0
 	github.com/rivo/uniseg v0.4.7
@@ -38,7 +39,6 @@ require (
 	github.com/charmbracelet/x/termios v0.1.1 // indirect
 	github.com/creack/pty v1.1.24 // indirect
 	github.com/dlclark/regexp2 v1.11.0 // indirect
-	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
