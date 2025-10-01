@@ -69,7 +69,8 @@ func (m model) Init() tea.Cmd { return m.filepicker.Init() }
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		height := msg.Height - m.padding[0] - m.padding[2]
+		// https://github.com/charmbracelet/gum/issues/969
+		height := msg.Height - 1 - m.padding[0] - m.padding[2]
 		if m.showHelp {
 			height -= lipgloss.Height(m.helpView())
 		}
