@@ -21,5 +21,5 @@ cd $FOLDER_SCRIPT
 git checkout chew
 git pull
 
-CGO_ENABLED=0 GOOS=darwin GOARH=arm64 go build -o $DVS_SRC/build/darwin-arm64/chew .
-CGO_ENABLED=0 GOOS=linux GOARH=amd64 go build -o $DVS_SRC/build/linux-amd64/chew .
+CGO_ENABLED=0 GOOS=darwin GOARH=arm64 go build -o $DVS_SRC/tools/darwin-arm64/chew .
+CGO_ENABLED=0 GOOS=linux GOARH=amd64 go build -o $DVS_SRC/tools/linux-amd64/chew .
