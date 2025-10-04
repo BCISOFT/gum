@@ -23,5 +23,10 @@ git pull
 
 mkdir -p $DVS_SRC/tools/darwin/arm64
 CGO_ENABLED=0 GOOS=darwin GOARH=arm64 go build -o $DVS_SRC/tools/darwin/arm64/chew .
+
 mkdir -p $DVS_SRC/tools/linux/amd64
 CGO_ENABLED=0 GOOS=linux GOARH=amd64 go build -o $DVS_SRC/tools/linux/amd64/chew .
+
+mkdir -p $DVS_SRC/tools/linux/arm64
+CGO_ENABLED=0 GOOS=linux GOARH=arm64 go build -o $DVS_SRC/tools/linux/arm64/chew .
+
