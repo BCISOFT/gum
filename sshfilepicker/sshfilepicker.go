@@ -3,18 +3,15 @@
 package sshfilepicker
 
 import (
-	"fmt"
-	"os"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"strings"
 	"sync/atomic"
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/dustin/go-humanize"
+	"github.com/melbahja/goph"
 )
 
 var lastID int64
@@ -31,8 +28,6 @@ func New() Model {
 		Cursor:           ">",
 		AllowedTypes:     []string{},
 		selected:         0,
-		ShowPermissions:  true,
-		ShowSize:         true,
 		ShowHidden:       false,
 		DirAllowed:       false,
 		FileAllowed:      true,
@@ -54,7 +49,7 @@ type errorMsg struct {
 
 type readDirMsg struct {
 	id      int
-	entries []os.DirEntry
+	entries []dirEntry
 }
 
 const (
@@ -143,13 +138,11 @@ type Model struct {
 	// If empty the user may select any file.
 	AllowedTypes []string
 
-	KeyMap          KeyMap
-	files           []os.DirEntry
-	ShowPermissions bool
-	ShowSize        bool
-	ShowHidden      bool
-	DirAllowed      bool
-	FileAllowed     bool
+	KeyMap      KeyMap
+	files       []dirEntry
+	ShowHidden  bool
+	DirAllowed  bool
+	FileAllowed bool
 
 	FileSelected  string
 	selected      int
@@ -168,12 +161,19 @@ type Model struct {
 
 	Cursor string
 	Styles Styles
+
+	SSH *goph.Client
 }
 
 type stack struct {
 	Push   func(int)
 	Pop    func() int
 	Length func() int
+}
+
+type dirEntry struct {
+	Name  string
+	IsDir bool
 }
 
 func newStack() stack {
@@ -205,25 +205,41 @@ func (m *Model) popView() (int, int, int) {
 
 func (m Model) readDir(path string, showHidden bool) tea.Cmd {
 	return func() tea.Msg {
-		dirEntries, err := os.ReadDir(path)
+		dirEntries := []dirEntry{}
+		command, err := m.SSH.Command("ls", "-1p", path)
+		if err != nil {
+			panic(err)
+		}
+		out, err := command.CombinedOutput()
 		if err != nil {
 			return errorMsg{err}
 		}
+		folderList := strings.SplitSeq(string(out), "\n")
+		for folder := range folderList {
+			if folder == "" {
+				continue
+			}
+			entry := dirEntry{
+				Name:  folder,
+				IsDir: strings.HasSuffix(folder, "/"),
+			}
+			dirEntries = append(dirEntries, entry)
+		}
 
 		sort.Slice(dirEntries, func(i, j int) bool {
-			if dirEntries[i].IsDir() == dirEntries[j].IsDir() {
-				return dirEntries[i].Name() < dirEntries[j].Name()
+			if dirEntries[i].IsDir == dirEntries[j].IsDir {
+				return dirEntries[i].Name < dirEntries[j].Name
 			}
-			return dirEntries[i].IsDir()
+			return dirEntries[i].IsDir
 		})
 
 		if showHidden {
 			return readDirMsg{id: m.id, entries: dirEntries}
 		}
 
-		var sanitizedDirEntries []os.DirEntry
+		var sanitizedDirEntries []dirEntry
 		for _, dirEntry := range dirEntries {
-			isHidden, _ := IsHidden(dirEntry.Name())
+			isHidden, _ := IsHidden(dirEntry.Name)
 			if isHidden {
 				continue
 			}
@@ -328,28 +344,12 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			}
 
 			f := m.files[m.selected]
-			info, err := f.Info()
-			if err != nil {
-				break
-			}
-			isSymlink := info.Mode()&os.ModeSymlink != 0
-			isDir := f.IsDir()
-
-			if isSymlink {
-				symlinkPath, _ := filepath.EvalSymlinks(filepath.Join(m.CurrentDirectory, f.Name()))
-				info, err := os.Stat(symlinkPath)
-				if err != nil {
-					break
-				}
-				if info.IsDir() {
-					isDir = true
-				}
-			}
+			isDir := f.IsDir
 
 			if (!isDir && m.FileAllowed) || (isDir && m.DirAllowed) {
 				if key.Matches(msg, m.KeyMap.Select) {
 					// Select the current path as the selection
-					m.Path = filepath.Join(m.CurrentDirectory, f.Name())
+					m.Path = filepath.Join(m.CurrentDirectory, f.Name)
 				}
 			}
 
@@ -357,7 +357,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				break
 			}
 
-			m.CurrentDirectory = filepath.Join(m.CurrentDirectory, f.Name())
+			m.CurrentDirectory = filepath.Join(m.CurrentDirectory, f.Name)
 			m.pushView(m.selected, m.min, m.max)
 			m.selected = 0
 			m.min = 0
@@ -381,29 +381,18 @@ func (m Model) View() string {
 		}
 
 		var symlinkPath string
-		info, _ := f.Info()
-		isSymlink := info.Mode()&os.ModeSymlink != 0
-		size := strings.Replace(humanize.Bytes(uint64(info.Size())), " ", "", 1) //nolint:gosec
-		name := f.Name()
+		isSymlink := false
+		name := f.Name
 
 		if isSymlink {
 			symlinkPath, _ = filepath.EvalSymlinks(filepath.Join(m.CurrentDirectory, name))
 		}
 
-		disabled := !m.canSelect(name) && !f.IsDir()
+		disabled := !m.canSelect(name) && !f.IsDir
 
 		if m.selected == i { //nolint:nestif
 			selected := ""
-			if m.ShowPermissions {
-				selected += " " + info.Mode().String()
-			}
-			if m.ShowSize {
-				selected += fmt.Sprintf("%"+strconv.Itoa(m.Styles.FileSize.GetWidth())+"s", size)
-			}
 			selected += " " + name
-			if isSymlink {
-				selected += " → " + symlinkPath
-			}
 			if disabled {
 				s.WriteString(m.Styles.DisabledSelected.Render(m.Cursor) + m.Styles.DisabledSelected.Render(selected))
 			} else {
@@ -414,7 +403,7 @@ func (m Model) View() string {
 		}
 
 		style := m.Styles.File
-		if f.IsDir() {
+		if f.IsDir {
 			style = m.Styles.Directory
 		} else if isSymlink {
 			style = m.Styles.Symlink
@@ -426,12 +415,6 @@ func (m Model) View() string {
 		s.WriteString(m.Styles.Cursor.Render(" "))
 		if isSymlink {
 			fileName += " → " + symlinkPath
-		}
-		if m.ShowPermissions {
-			s.WriteString(" " + m.Styles.Permission.Render(info.Mode().String()))
-		}
-		if m.ShowSize {
-			s.WriteString(m.Styles.FileSize.Render(size))
 		}
 		s.WriteString(" " + fileName)
 		s.WriteRune('\n')
@@ -478,23 +461,7 @@ func (m Model) didSelectFile(msg tea.Msg) (bool, string) {
 		// The key press was a selection, let's confirm whether the current file could
 		// be selected or used for navigating deeper into the stack.
 		f := m.files[m.selected]
-		info, err := f.Info()
-		if err != nil {
-			return false, ""
-		}
-		isSymlink := info.Mode()&os.ModeSymlink != 0
-		isDir := f.IsDir()
-
-		if isSymlink {
-			symlinkPath, _ := filepath.EvalSymlinks(filepath.Join(m.CurrentDirectory, f.Name()))
-			info, err := os.Stat(symlinkPath)
-			if err != nil {
-				break
-			}
-			if info.IsDir() {
-				isDir = true
-			}
-		}
+		isDir := f.IsDir
 
 		if (!isDir && m.FileAllowed) || (isDir && m.DirAllowed) && m.Path != "" {
 			return true, m.Path

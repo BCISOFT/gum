@@ -38,6 +38,10 @@ func (k keymap) ShortHelp() []key.Binding {
 			key.WithKeys("up", "down"),
 			key.WithHelp("↓↑", "navigate"),
 		),
+		key.NewBinding(
+			key.WithKeys("left", "right"),
+			key.WithHelp("←→", "out/in"),
+		),
 		keyQuit,
 		k.Select,
 	}
