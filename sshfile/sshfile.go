@@ -34,13 +34,17 @@ func (k keymap) FullHelp() [][]key.Binding { return nil }
 // ShortHelp implements help.KeyMap.
 func (k keymap) ShortHelp() []key.Binding {
 	return []key.Binding{
+		// key.NewBinding(
+		// 	key.WithKeys("up", "down"),
+		// 	key.WithHelp("↓↑", "navigate"),
+		// ),
+		// key.NewBinding(
+		// 	key.WithKeys("left", "right"),
+		// 	key.WithHelp("←→", "out/in"),
+		// ),
 		key.NewBinding(
-			key.WithKeys("up", "down"),
-			key.WithHelp("↓↑", "navigate"),
-		),
-		key.NewBinding(
-			key.WithKeys("left", "right"),
-			key.WithHelp("←→", "out/in"),
+			key.WithKeys("left", "down", "up", "right"),
+			key.WithHelp("←↓↑→", "navigate"),
 		),
 		keyQuit,
 		k.Select,
