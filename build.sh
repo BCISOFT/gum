@@ -23,12 +23,12 @@ git pull
 
 GUM_VERSION="0.17.0"
 
-mkdir -p $DVS_SRC/tools/darwin/arm64
-CGO_ENABLED=0 GOOS=darwin GOARH=arm64 go build -ldflags="-X main.Version=chew-${GUM_VERSION}" -o $DVS_SRC/tools/darwin/arm64/chew .
+mkdir -p $DVS_SRC/binaries/darwin/arm64
+CGO_ENABLED=0 GOOS=darwin GOARH=arm64 go build -ldflags="-X main.Version=chew-${GUM_VERSION}" -o $DVS_SRC/binaries/darwin/arm64/chew .
 
-mkdir -p $DVS_SRC/tools/linux/amd64
-CGO_ENABLED=0 GOOS=linux GOARH=amd64 go build -ldflags="-X main.Version=chew-${GUM_VERSION}" -o $DVS_SRC/tools/linux/amd64/chew .
+mkdir -p $DVS_SRC/binaries/linux/amd64
+CGO_ENABLED=0 GOOS=linux GOARH=amd64 go build -ldflags="-X main.Version=chew-${GUM_VERSION}" -o $DVS_SRC/binaries/linux/amd64/chew .
 
-mkdir -p $DVS_SRC/tools/linux/arm64
-CGO_ENABLED=0 GOOS=linux GOARH=arm64 go build -ldflags="-X main.Version=chew-${GUM_VERSION}" -o $DVS_SRC/tools/linux/arm64/chew .
+mkdir -p $DVS_SRC/binaries/linux/arm64
+CGO_ENABLED=0 GOOS=linux GOARH=arm64 go build -ldflags="-X main.Version=chew-${GUM_VERSION}" -o $DVS_SRC/binaries/linux/arm64/chew .
 
